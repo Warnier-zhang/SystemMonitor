@@ -86,7 +86,7 @@ public class Console extends ApplicationFrame {
 
     public static void main(String[] args) {
         Console console = new Console("System Monitor");
-        console.pack();
+        console.setSize(680, 420);
         console.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         console.setVisible(true);
     }
