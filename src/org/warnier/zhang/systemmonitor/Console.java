@@ -11,28 +11,23 @@ import org.warnier.zhang.systemmonitor.util.SystemMonitor;
 import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.List;
+import java.util.Timer;
 
 /**
  * Startpoint for whole project.
  */
 public class Console extends ApplicationFrame {
     private static final long delayMillis = 1000;
+    private List<Map<String, Double>> dataSet = new ArrayList<>(8);
 
     public Console(String title) {
         super(title);
         ChartFactory.setChartTheme(getTheme());
-        JFreeChart chart = ChartFactory.createLineChart("内存监视器",
-                null,
-                null,
-                getDataSet());
-        ChartPanel chartPanel = new ChartPanel(chart);
-        // ? Can't use zh_CN.
-        //chartPanel.setFont(new Font("MS Song", Font.PLAIN, 12));
-        setContentPane(chartPanel);
+
+        //Gather system info.
+        gatherSystemInfo();
     }
 
     //Enable zh_CN.
@@ -45,27 +40,48 @@ public class Console extends ApplicationFrame {
         return theme;
     }
 
-    private DefaultCategoryDataset getDataSet() {
-        DefaultCategoryDataset dataSet = new DefaultCategoryDataset();
-        Set<Map.Entry<String, Double>> entrySet = gatherSystemInfo();
-        for (Map.Entry<String, Double> entry : entrySet) {
-            dataSet.addValue(entry.getValue(), "内存占用率", entry.getKey());
-        }
-        return dataSet;
+    private void gatherSystemInfo() {
+        final SystemMonitor monitor = new SystemMonitor();
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                Map<String, Double> dataItem = new HashMap<>(1);
+                dataItem.put(SimpleDateFormat.getTimeInstance().format(new Date()), monitor.getMemory());
+                dataSet.add(dataItem);
+                //Retain 8 latest items.
+                if (dataSet.size() > 8) {
+                    dataSet.remove(0);
+                }
+                invalidate(getChart());
+            }
+        }, 0, delayMillis);
     }
 
-    private Set<Map.Entry<String, Double>> gatherSystemInfo() {
-        SystemMonitor monitor = new SystemMonitor();
-        Map<String, Double> dataSet = new HashMap<>(10);
-        for (int i = 0; i < 8; i++) {
-            dataSet.put(SimpleDateFormat.getTimeInstance().format(new Date()), monitor.getMemory());
-            try {
-                Thread.sleep(delayMillis);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+    private void invalidate(JFreeChart chart) {
+        ChartPanel chartPanel = new ChartPanel(chart);
+        // ? Can't use zh_CN.
+        //chartPanel.setFont(new Font("MS Song", Font.PLAIN, 12));
+        chartPanel.repaint();
+
+        setContentPane(chartPanel);
+    }
+
+    private JFreeChart getChart() {
+        JFreeChart chart = ChartFactory.createLineChart("内存监视器",
+                null,
+                null,
+                wrapDataSet(dataSet));
+        return chart;
+    }
+
+    private DefaultCategoryDataset wrapDataSet(List<Map<String, Double>> rawData) {
+        DefaultCategoryDataset dataSet = new DefaultCategoryDataset();
+        for (int i = 0; i < rawData.size(); i++) {
+            for (Map.Entry<String, Double> entry : rawData.get(i).entrySet()) {
+                dataSet.addValue(entry.getValue(), "内存占用率", entry.getKey());
             }
         }
-        return dataSet.entrySet();
+        return dataSet;
     }
 
     public static void main(String[] args) {
