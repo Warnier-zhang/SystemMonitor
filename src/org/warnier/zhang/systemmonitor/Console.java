@@ -61,9 +61,8 @@ public class Console extends ApplicationFrame {
         ChartPanel chartPanel = new ChartPanel(chart);
         // ? Can't use zh_CN.
         //chartPanel.setFont(new Font("MS Song", Font.PLAIN, 12));
-        chartPanel.repaint();
-
         setContentPane(chartPanel);
+        ((JPanel)getContentPane()).updateUI();
     }
 
     private JFreeChart getChart() {
