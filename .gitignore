@@ -1,0 +1,13 @@
+﻿# Created by Warnier-zhang
+
+# Directory containing java archive files
+libs/
+
+# Generated files
+out/
+
+#Intellij IDEA
+*.iml
+
+# Directory-based project 
+.idea/
